@@ -1,8 +1,9 @@
+import { Task } from "@/type";
 import { request } from "umi";
 
 export const MjApi = {
     getTaskById:async (id:string) => {
-        return BaseRequest.get(`/mj-api/mj/task/${id}/fetch`)
+        return BaseRequest.get<Task>(`/mj-api/mj/task/${id}/fetch`)
     }
 }
 
