@@ -1,6 +1,6 @@
 import { defineMock } from 'umi';
 
-type Product = {
+export type Product = {
   id: string;
   name: string;
 };
