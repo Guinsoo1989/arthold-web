@@ -56,7 +56,7 @@ export default function Page() {
             title: "图片",
             render(_, row) {
               return (
-                row.imageUrl
+                <a href={row.imageUrl}>查看图片</a>
                 // <Image
                 //   width={200}
                 //   src={row.imageUrl}
