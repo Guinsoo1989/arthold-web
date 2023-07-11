@@ -5,13 +5,15 @@ export default defineConfig({
   antd: {},
   request: {},
   routes: [
-    { path: "/", component: "index", name: "home" },
+    { path: "/", component: "index"},
+    { path: "/friend", component: "FriendPage" },
     // { path: "/docs", component: "docs" },
   ],
   npmClient: "pnpm",
   proxy: {
     '/mj-api': {
-      'target': 'https://mj-api-art.zeabur.app/',
+      // 'target': 'https://mj-api-art.zeabur.app/',
+      'target': 'http://localhost:8080/',
       'changeOrigin': true,
       'pathRewrite': { '^/mj-api' : '' },
     },
