@@ -37,11 +37,13 @@ type SubmitImagineParam = {
 }
 
 export type ImageIndex = 1 | 2 | 3 | 4;
+export type ZoomArg = '50' | '75'
 
 export type SubmitChange = {
   action: ChangeAction;
   taskId: string;
-  index: ImageIndex;
+  index?: ImageIndex;
+  zoomArg?: ZoomArg
 }
 
 const BaseRequest = {

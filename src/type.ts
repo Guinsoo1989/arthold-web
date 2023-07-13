@@ -10,6 +10,7 @@ export type Task = {
     progress: string
     prompt: string
     promptEn: string
+    description: string;
     status: "NOT_START" | "SUBMITTED" | "IN_PROGRESS" | "FAILURE" | 'SUCCESS'
 }
 

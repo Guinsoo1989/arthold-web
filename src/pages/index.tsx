@@ -3,18 +3,17 @@ import React, { useEffect, useMemo, useState } from "react";
 import styles from "./products.less";
 import { useLocalStorageState, useMount } from "ahooks";
 import { Button, Image, Input, Modal, Space, Table, Tag, message, notification } from "antd";
-import { ImageIndex, MjApi, SubmitChange, SubmitCode, SubmitRes } from "@/api/mjApi";
+import { ImageIndex, MjApi, SubmitChange, SubmitCode, SubmitRes, ZoomArg } from "@/api/mjApi";
 import { Task, TaskItem } from "@/type";
 import { TimeUtil } from "@/util/TimeUtil";
 import { request } from "umi";
 import { DbUtil, db } from "@/service/db";
 import { ObjUtil } from "@/util/ObjUtil";
 import { InitTasks } from "@/test";
+import { IndexService } from "./indexService";
 
-const form = {
-  prompt: "",
-};
 
+const service = IndexService;
 
 export default function Page() {
 
@@ -74,7 +73,7 @@ export default function Page() {
   /********************* network ***************************/
   async function imagine() {
     submitTask(async () => {
-      return await MjApi.submit.imagine(form)
+      return await MjApi.submit.imagine(service.form)
     })
   }
 
@@ -98,51 +97,59 @@ export default function Page() {
     })
   }
 
-  async function zoom(taskId: string) {
+  async function zoom(taskId: string, zoomArg: ZoomArg) {
     submitTask(async () => {
       return await MjApi.submit.change({
         action: 'ZOOM',
         taskId,
-        index: 1
+        zoomArg
       })
     })
   }
 
   /********************* ui ***************************/
   async function submitTask(submitFn: () => Promise<SubmitRes>) {
-    notification.info({
-      message: "任务提交中..."
-    })
+    message.info(
+      "任务提交中..."
+    )
     setLoading(true)
     const { code, result: taskId, description } = await submitFn()
     if (code !== SubmitCode.提交成功) {
       setLoading(false)
-      notification.error({
-        message: description
-      })
+      message.error(
+        description
+      )
       return;
     }
     const task = await MjApi.getTaskById(taskId)
     setLoading(false)
     if (!task) {
-      notification.error({
-        message: "获取任务失败"
-      })
+      message.error(
+        "获取任务失败"
+      )
       return;
     }
-    notification.success({
-      message: "任务执行中..."
-    })
+    message.success(
+      "任务执行中..."
+    )
     setTaskList([task, ...taskList!])
   }
 
   function opBtns(task: Task) {
+    if (!service.taskIsFinish(task)) {
+      return null;
+    }
     const { id, action } = task;
     if (action === 'UPSCALE') {
       return (
-        <Button onClick={() => {
-          zoom(id)
-        }}>Zoom 1.5x</Button>
+        <>
+          <Button onClick={() => {
+            zoom(id, "75")
+          }}>Zoom 1.5x</Button>
+          <Button onClick={() => {
+            zoom(id, "50")
+          }}>Zoom 2x</Button>
+        </>
       )
     }
     return (
@@ -184,13 +191,34 @@ export default function Page() {
     return btns
   }
 
+  function refreshTaskBtn(row: Task) {
+    const { id } = row
+    if (service.taskIsFinish(row)) {
+      return null;
+    }
+    return (
+      <Button onClick={async () => {
+        setLoading(true)
+        const task = await MjApi.getTaskById(id)
+        console.log('刷新任务：', task)
+        for (const per of taskList!) {
+          if (per.id === task.id) {
+            ObjUtil.copyProperties(task, per)
+          }
+        }
+        setTaskList([...taskList!])
+        setLoading(false)
+      }}>刷新</Button>
+    )
+  }
+
   return (
     <div>
       <Space.Compact style={{ width: "100%" }}>
         <Input
           placeholder="请输入英文提示语"
           onChange={(e) => {
-            form.prompt = e.currentTarget.value;
+            service.form.prompt = e.currentTarget.value;
           }}
         />
         <Button
@@ -257,13 +285,15 @@ export default function Page() {
             }
           },
           {
-            title: "提示词",
-            dataIndex: "prompt"
+            title: "动作",
+            // dataIndex: "description"
+            dataIndex: "action"
           },
           {
-            title: "描述",
-            dataIndex: "description"
+            title: "描述词",
+            dataIndex: "prompt"
           },
+
           {
             title: "提交时间",
             render(_, row) {
@@ -283,22 +313,10 @@ export default function Page() {
           {
             title: "操作",
             render(_, row) {
-              const { id } = row
+
               return (
                 <Space size={'small'}>
-                  <Button onClick={async () => {
-                    setLoading(true)
-                    const task = await MjApi.getTaskById(row.id)
-                    console.log('刷新任务：', task)
-                    for (const per of taskList!) {
-                      if (per.id === task.id) {
-                        ObjUtil.copyProperties(task, per)
-                      }
-                    }
-                    setTaskList([...taskList!])
-                    setLoading(false)
-                  }}>刷新</Button>
-
+                  {refreshTaskBtn(row)}
                   {opBtns(row)}
                 </Space>
               )
